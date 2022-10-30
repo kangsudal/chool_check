@@ -13,19 +13,45 @@ class _HomeScreenState extends State<HomeScreen> {
   static final LatLng churchLatLng = LatLng(37.5997, 127.0627);
   static final CameraPosition initialCameraPosition =
       CameraPosition(target: churchLatLng, zoom: 15);
+  static final double distance = 100; //100m
+  static final Circle circle = Circle(
+    circleId: CircleId('circle'),
+    center: churchLatLng,
+    fillColor: Colors.deepPurple.withOpacity(0.5),
+    radius: distance,
+    strokeColor: Colors.deepPurple,
+    strokeWidth: 1,
+  );
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
         appBar: renderAppBar,
-        body: Column(
-          children: [
-            CustomGoogleMap(
-              initialCameraPosition: initialCameraPosition,
-            ),
-            ChoolCheckButton(),
-          ],
-        ),
+        body: FutureBuilder(
+            future: checkPermission(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+
+              if (snapshot.data == '위치 권한이 허가되었습니다.') {
+                return Column(
+                  children: [
+                    CustomGoogleMap(
+                      initialCameraPosition: initialCameraPosition, circle: circle,
+                    ),
+                    ChoolCheckButton(),
+                  ],
+                );
+              }
+
+              return Center(
+                child: Text(snapshot.data.toString()),
+              );
+            }),
       ),
     );
   }
@@ -69,7 +95,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class CustomGoogleMap extends StatelessWidget {
   final CameraPosition initialCameraPosition;
-  const CustomGoogleMap({required this.initialCameraPosition, Key? key})
+  final Circle circle;
+  const CustomGoogleMap({required this.initialCameraPosition, Key? key, required this.circle})
       : super(key: key);
 
   @override
@@ -79,6 +106,9 @@ class CustomGoogleMap extends StatelessWidget {
       child: GoogleMap(
         initialCameraPosition: initialCameraPosition,
         mapType: MapType.normal, //terrain,
+        myLocationEnabled: true, //현재 위치 표시
+        myLocationButtonEnabled: false, //현재위치 새로고침 버튼
+        circles: Set.from([circle,]),
       ),
     );
   }
