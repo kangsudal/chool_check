@@ -13,12 +13,12 @@ class _HomeScreenState extends State<HomeScreen> {
   static final LatLng churchLatLng = LatLng(37.5997, 127.0627);
   static final CameraPosition initialCameraPosition =
       CameraPosition(target: churchLatLng, zoom: 15);
-  static final double distance = 100; //100m
+  static final double okDistance = 100; //100m
   static final Circle withinDistanceCircle = Circle(
     circleId: CircleId('withinDistanceCircle'),
     center: churchLatLng,
     fillColor: Colors.blue.withOpacity(0.5),
-    radius: distance,
+    radius: okDistance,
     strokeColor: Colors.blue,
     strokeWidth: 1,
   );
@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
     circleId: CircleId('notWithinDistanceCircle'),
     center: churchLatLng,
     fillColor: Colors.red.withOpacity(0.5),
-    radius: distance,
+    radius: okDistance,
     strokeColor: Colors.red,
     strokeWidth: 1,
   );
@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
     circleId: CircleId('checkDoneCircle'),
     center: churchLatLng,
     fillColor: Colors.deepPurple.withOpacity(0.5),
-    radius: distance,
+    radius: okDistance,
     strokeColor: Colors.deepPurple,
     strokeWidth: 1,
   );
@@ -48,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return SafeArea(
       child: Scaffold(
         appBar: renderAppBar,
-        body: FutureBuilder(
+        body: FutureBuilder<String>(
             future: checkPermission(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -58,20 +58,46 @@ class _HomeScreenState extends State<HomeScreen> {
               }
 
               if (snapshot.data == '위치 권한이 허가되었습니다.') {
-                return Column(
-                  children: [
-                    CustomGoogleMap(
-                      initialCameraPosition: initialCameraPosition,
-                      circle: withinDistanceCircle,
-                      marker: marker,
-                    ),
-                    ChoolCheckButton(),
-                  ],
-                );
+                return StreamBuilder<Position>(
+                    //generic은 snapshot의 Type
+                    stream: Geolocator
+                        .getPositionStream(), //getPositionStream은 position값이 바뀔때마다 불린다.(위치가 이동될때마다)
+                    builder: (context, snapshot) {
+                      //snapshot.data가 바뀌면 builder가 다시 실행된다
+                      bool isWithinRange = false; //어떤 circle을 넣어줄지 정해준다.
+
+                      if (snapshot.hasData) {
+                        final start = snapshot.data!;
+                        final end = churchLatLng;
+
+                        final distance = Geolocator.distanceBetween(
+                          start.latitude,
+                          start.longitude,
+                          end.latitude,
+                          end.longitude,
+                        );
+
+                        if (distance < okDistance) {
+                          isWithinRange = true;
+                        }
+                      }
+                      return Column(
+                        children: [
+                          CustomGoogleMap(
+                            initialCameraPosition: initialCameraPosition,
+                            circle: isWithinRange
+                                ? withinDistanceCircle
+                                : notWithinDistanceCircle,
+                            marker: marker,
+                          ),
+                          ChoolCheckButton(),
+                        ],
+                      );
+                    });
               }
 
               return Center(
-                child: Text(snapshot.data.toString()),
+                child: Text(snapshot.data!),
               );
             }),
       ),
