@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: renderAppBar,
+        appBar: renderAppBar(),
         body: FutureBuilder<String>(
             future: checkPermission(),
             builder: (context, snapshot) {
@@ -173,34 +173,36 @@ class _HomeScreenState extends State<HomeScreen> {
     return '위치 권한이 허가되었습니다.';
   }
 
-  AppBar renderAppBar = AppBar(
-    title: Text(
-      '오늘도 출근', //'근처 식당찾기',
-      style: TextStyle(
-        color: Colors.black,
-        fontWeight: FontWeight.w900,
+  AppBar renderAppBar(){
+    return AppBar(
+      title: Text(
+        '오늘도 출근', //'근처 식당찾기',
+        style: TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.w900,
+        ),
       ),
-    ),
-    centerTitle: true,
-    backgroundColor: Colors.white,
-    actions: [
-      IconButton(
-        onPressed: () async {
-          if (mapController == null) {
-            return;
-          }
-          final location = await Geolocator.getCurrentPosition();
-          mapController!.animateCamera(
-            CameraUpdate.newLatLng(
-              LatLng(location.latitude, location.longitude),
-            ),
-          );
-        },
-        icon: Icon(Icons.my_location),
-        color: Colors.black,
-      ),
-    ],
-  );
+      centerTitle: true,
+      backgroundColor: Colors.white,
+      actions: [
+        IconButton(
+          onPressed: () async {
+            if (mapController == null) {
+              return;
+            }
+            final location = await Geolocator.getCurrentPosition();
+            mapController!.animateCamera(
+              CameraUpdate.newLatLng(
+                LatLng(location.latitude, location.longitude),
+              ),
+            );
+          },
+          icon: Icon(Icons.my_location),
+          color: Colors.black,
+        ),
+      ],
+    );
+  }
 }
 
 class CustomGoogleMap extends StatelessWidget {
